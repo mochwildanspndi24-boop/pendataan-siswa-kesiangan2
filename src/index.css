@@ -1,0 +1,212 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Scrollbar hide utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 98%;
+    --foreground: 220 30% 8%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 30% 8%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 30% 8%;
+
+    --primary: 145 55% 28%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 43 70% 94%;
+    --secondary-foreground: 43 60% 25%;
+
+    --muted: 220 14% 95%;
+    --muted-foreground: 220 10% 46%;
+
+    --accent: 43 75% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 58%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 14% 90%;
+    --input: 220 14% 90%;
+    --ring: 145 55% 28%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 145 45% 24%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 43 75% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 145 50% 32%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 145 40% 32%;
+    --sidebar-ring: 43 75% 50%;
+
+    /* Custom tokens */
+    --school-green: 145 55% 28%;
+    --school-gold: 43 75% 45%;
+    --school-green-light: 145 55% 96%;
+    --school-gold-light: 43 75% 96%;
+    --gradient-header: linear-gradient(135deg, hsl(145, 55%, 22%), hsl(145, 50%, 36%));
+    --gradient-gold: linear-gradient(135deg, hsl(43, 75%, 40%), hsl(43, 90%, 55%));
+    --gradient-card: linear-gradient(145deg, hsl(0, 0%, 100%), hsl(145, 40%, 98%));
+    --shadow-elegant: 0 4px 24px -6px hsl(145 55% 28% / 0.25);
+    --shadow-card: 0 2px 12px hsl(220 14% 10% / 0.07);
+    --shadow-glow: 0 0 30px hsl(145 55% 28% / 0.2);
+    --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    --background: 220 28% 8%;
+    --foreground: 210 35% 96%;
+
+    --card: 220 25% 12%;
+    --card-foreground: 210 35% 96%;
+
+    --popover: 220 25% 13%;
+    --popover-foreground: 210 35% 96%;
+
+    --primary: 145 45% 46%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 22% 18%;
+    --secondary-foreground: 210 30% 85%;
+
+    --muted: 220 22% 18%;
+    --muted-foreground: 220 12% 60%;
+
+    --accent: 43 70% 52%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 65% 48%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 145 45% 46%;
+
+    --sidebar-background: 220 30% 10%;
+    --sidebar-foreground: 210 35% 96%;
+    --sidebar-primary: 43 70% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 25% 16%;
+    --sidebar-accent-foreground: 210 35% 96%;
+    --sidebar-border: 220 22% 18%;
+    --sidebar-ring: 43 70% 52%;
+
+    --school-green: 145 45% 46%;
+    --school-gold: 43 70% 52%;
+    --school-green-light: 145 30% 14%;
+    --school-gold-light: 43 40% 14%;
+    --gradient-header: linear-gradient(135deg, hsl(220, 30%, 10%), hsl(145, 40%, 20%));
+    --gradient-gold: linear-gradient(135deg, hsl(43, 60%, 40%), hsl(43, 80%, 55%));
+    --gradient-card: linear-gradient(145deg, hsl(220, 25%, 12%), hsl(145, 20%, 14%));
+    --shadow-elegant: 0 4px 24px -6px hsl(0 0% 0% / 0.5);
+    --shadow-card: 0 2px 12px hsl(0 0% 0% / 0.3);
+    --shadow-glow: 0 0 30px hsl(145 45% 30% / 0.3);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-muted;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.4);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.7);
+}
+
+/* Student Card Pulse Animation */
+@keyframes pulse-late {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.97); }
+}
+
+@keyframes mark-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+.card-mark-animation {
+  animation: mark-pop 0.3s ease-out;
+}
+
+/* Gradient text */
+.gradient-text {
+  background: var(--gradient-header);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-gold-text {
+  background: var(--gradient-gold);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Online indicator */
+@keyframes ping-online {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.online-ping {
+  animation: ping-online 2s ease-in-out infinite;
+}
+
+/* Page transitions */
+.page-enter {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

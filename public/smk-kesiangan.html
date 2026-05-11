@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="id" class="">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMK DARUL MUTTAQIN CIANJUR - Sistem Kesiangan</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        primary: '#1d6b3d',
+        'primary-light': '#2d8a52',
+        accent: '#c89a2a',
+      }
+    }
+  }
+}
+</script>
+<style>
+  :root { --primary: #1d6b3d; --primary-light: #2d8a52; --accent: #c89a2a; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  .gradient-header { background: linear-gradient(135deg, #1d6b3d 0%, #2d8a52 60%, #c89a2a 100%); }
+  .card-shadow { box-shadow: 0 4px 20px rgba(29,107,61,0.12); }
+  .ping-green { animation: ping 1.2s cubic-bezier(0,0,0.2,1) infinite; }
+  @keyframes ping { 75%,100% { transform: scale(2); opacity: 0; } }
+  .student-card:active { transform: scale(0.95); }
+  .student-card { transition: all 0.15s ease; cursor: pointer; }
+  input:focus, select:focus { outline: 2px solid #1d6b3d; outline-offset: 1px; }
+  .scrollbar-thin::-webkit-scrollbar { width: 5px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: #f1f5f9; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: #1d6b3d44; border-radius: 9999px; }
+  .dark .scrollbar-thin::-webkit-scrollbar-track { background: #1e293b; }
+  .dark body { background: #0f172a; color: #e2e8f0; }
+  .dark .bg-white { background-color: #1e293b !important; }
+  .dark .bg-gray-50 { background-color: #0f172a !important; }
+  .dark .bg-gray-100 { background-color: #1e293b !important; }
+  .dark .border-gray-200 { border-color: #334155 !important; }
+  .dark .text-gray-700 { color: #cbd5e1 !important; }
+  .dark .text-gray-600 { color: #94a3b8 !important; }
+  .dark .text-gray-500 { color: #64748b !important; }
+  .dark .text-gray-900 { color: #f1f5f9 !important; }
+  .dark .text-gray-800 { color: #e2e8f0 !important; }
+  .dark .hover\:bg-gray-100:hover { background-color: #334155 !important; }
+  .dark .hover\:bg-gray-50:hover { background-color: #1e293b !important; }
+  #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+  .toast { padding: 12px 18px; border-radius: 12px; font-size: 14px; font-weight: 600; color: white; box-shadow: 0 4px 16px rgba(0,0,0,0.2); animation: slideIn 0.3s ease; }
+  .toast-success { background: #1d6b3d; }
+  .toast-error { background: #dc2626; }
+  @keyframes slideIn { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @media print { #toast-container, #sidebar, #top-bar { display: none; } }
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<div id="toast-container"></div>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" class="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+  <div class="w-full max-w-sm">
+    <!-- Online Badge -->
+    <div class="flex justify-between items-center mb-5">
+      <div id="login-online-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border bg-gray-100 border-gray-300 text-gray-500">
+        <span class="h-2 w-2 rounded-full bg-gray-400"></span>Memeriksa...
+      </div>
+      <button onclick="toggleDark()" class="p-2 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 text-sm">&#9790;</button>
+    </div>
+    <!-- School Identity -->
+    <div class="text-center mb-5">
+      <div class="relative inline-block mb-3">
+        <div class="absolute inset-0 rounded-full opacity-20 blur-xl" style="background:#1d6b3d;transform:scale(1.5)"></div>
+        <div class="relative w-24 h-24 rounded-full border-4 gradient-header flex items-center justify-center p-2 shadow-lg" style="border-color:rgba(29,107,61,0.3)">
+          <img src="https://grazia-prod.oss-ap-southeast-1.aliyuncs.com/resources/uid_100050100/514a7296-7778-48.png" crossorigin="anonymous" alt="Logo" class="w-full h-full object-contain">
+        </div>
+      </div>
+      <h1 class="text-2xl font-black text-gray-900 dark:text-white tracking-tight">SMK DARUL MUTTAQIN</h1>
+      <h2 class="text-xl font-bold mt-0.5 tracking-wide" style="color:#1d6b3d">CIANJUR</h2>
+      <div class="h-0.5 w-16 mx-auto mt-2 mb-2 rounded-full" style="background:linear-gradient(90deg,#1d6b3d,#c89a2a)"></div>
+      <p class="text-xs font-medium text-gray-500 uppercase tracking-widest">Sistem Pendataan Siswa Kesiangan</p>
+    </div>
+    <!-- Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 overflow-hidden card-shadow">
+      <div class="gradient-header px-5 py-3 flex justify-between items-center">
+        <div>
+          <p class="text-white/60 text-xs uppercase tracking-widest">Jam Sekarang</p>
+          <span id="login-clock" class="text-white font-mono font-bold text-2xl tabular-nums"></span>
+        </div>
+        <div class="text-right">
+          <p class="text-white/60 text-xs uppercase tracking-widest">Tanggal</p>
+          <p id="login-date" class="text-white/90 text-xs font-medium capitalize"></p>
+        </div>
+      </div>
+      <div class="p-5">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style="background:rgba(29,107,61,0.1);color:#1d6b3d">&#128737;</div>
+          <div>
+            <p class="text-sm font-bold text-gray-900 dark:text-white">Masuk Admin</p>
+            <p class="text-xs text-gray-500">Masukkan kredensial akun admin</p>
+          </div>
+        </div>
+        <div id="login-error" class="hidden mb-3 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs font-medium"></div>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-1">Username</label>
+            <input id="login-user" type="email" placeholder="admin@gmail.com" class="w-full h-10 px-3 rounded-lg border-2 border-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm focus:border-green-600" value="admin@gmail.com">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-1">Password</label>
+            <div class="relative">
+              <input id="login-pass" type="password" placeholder="••••••••" class="w-full h-10 px-3 rounded-lg border-2 border-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm focus:border-green-600 pr-10">
+              <button type="button" onclick="togglePassVis()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">&#128065;</button>
+            </div>
+          </div>
+          <button onclick="doLogin()" id="login-btn" class="w-full h-10 gradient-header text-white font-bold text-sm rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+            <span>&#128275;</span> Masuk ke Sistem
+          </button>
+        </div>
+      </div>
+    </div>
+    <p class="text-center text-xs text-gray-400 mt-4">&copy; 2026 SMK DARUL MUTTAQIN CIANJUR</p>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" class="hidden flex h-screen overflow-hidden">
+  <!-- SIDEBAR -->
+  <div id="sidebar" class="w-64 flex-shrink-0 bg-white dark:bg-gray-900 border-r border-gray-200 flex flex-col h-full overflow-hidden">
+    <!-- Logo Header -->
+    <div class="gradient-header px-4 py-4">
+      <div class="flex items-center gap-3">
+        <img src="https://grazia-prod.oss-ap-southeast-1.aliyuncs.com/resources/uid_100050100/514a7296-7778-48.png" crossorigin="anonymous" class="w-10 h-10 rounded-full border-2 border-white/30 bg-white/10 p-1 object-contain">
+        <div>
+          <p class="text-white font-bold text-xs leading-tight">SMK DARUL MUTTAQIN</p>
+          <p class="text-white/70 text-xs">CIANJUR</p>
+        </div>
+      </div>
+    </div>
+    <!-- Clock -->
+    <div class="px-4 py-2 bg-green-50 dark:bg-green-900/20 border-b border-gray-200">
+      <p id="app-clock" class="font-mono font-bold text-xl tabular-nums" style="color:#1d6b3d"></p>
+      <p id="app-date" class="text-xs text-gray-500 capitalize"></p>
+    </div>
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-3 space-y-1 overflow-y-auto scrollbar-thin">
+      <button onclick="showPage('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-gray-600 hover:bg-gray-100">
+        <span class="text-base">&#128202;</span> Dashboard
+      </button>
+      <button onclick="showPage('attendance')" id="nav-attendance" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-gray-600 hover:bg-gray-100">
+        <span class="text-base">&#128203;</span> Presensi Kesiangan
+      </button>
+      <button onclick="showPage('reports')" id="nav-reports" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-gray-600 hover:bg-gray-100">
+        <span class="text-base">&#128196;</span> Laporan
+      </button>
+      <button onclick="showPage('settings')" id="nav-settings" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-gray-600 hover:bg-gray-100">
+        <span class="text-base">&#9881;</span> Pengaturan
+      </button>
+    </nav>
+    <!-- Bottom -->
+    <div class="px-3 py-3 border-t border-gray-200 space-y-2">
+      <div class="flex items-center justify-between px-3">
+        <span class="text-xs font-medium text-gray-500">Tema</span>
+        <button onclick="toggleDark()" id="theme-btn" class="relative inline-flex h-6 w-11 items-center rounded-full border-2 border-gray-300 transition-colors bg-gray-200">
+          <span id="theme-thumb" class="inline-block h-4 w-4 rounded-full bg-white shadow transition-transform translate-x-0.5"></span>
+        </button>
+      </div>
+      <button onclick="doLogout()" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 font-medium">
+        <span>&#128682;</span> Keluar
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <!-- Top bar (mobile) -->
+    <div class="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 sticky top-0 z-10">
+      <button onclick="toggleSidebar()" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100">&#9776;</button>
+      <span class="font-bold text-sm" style="color:#1d6b3d">SMK Darul Muttaqin</span>
+      <div id="mobile-clock" class="font-mono font-bold text-sm tabular-nums" style="color:#1d6b3d"></div>
+    </div>
+    <main class="flex-1 overflow-y-auto p-4 md:p-6 scrollbar-thin">
+
+      <!-- DASHBOARD -->
+      <div id="page-dashboard" class="page-content hidden space-y-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+            <p class="text-sm text-gray-500 mt-0.5">Ringkasan data kesiangan hari ini</p>
+          </div>
+          <div id="online-badge" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border"></div>
+        </div>
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 p-4 card-shadow">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Hari Ini</p>
+            <p id="stat-today" class="text-3xl font-black mt-1" style="color:#1d6b3d">0</p>
+            <p class="text-xs text-gray-400 mt-1">siswa terlambat</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 p-4 card-shadow">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Minggu Ini</p>
+            <p id="stat-week" class="text-3xl font-black mt-1" style="color:#c89a2a">0</p>
+            <p class="text-xs text-gray-400 mt-1">total kejadian</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 p-4 card-shadow">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Bulan Ini</p>
+            <p id="stat-month" class="text-3xl font-black mt-1 text-blue-600">0</p>
+            <p class="text-xs text-gray-400 mt-1">total kejadian</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 p-4 card-shadow">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Batas Terlambat</p>
+            <p id="stat-latetime" class="text-3xl font-black mt-1 text-purple-600">--:--</p>
+            <p class="text-xs text-gray-400 mt-1">jam kesiangan</p>
+          </div>
+        </div>
+        <!-- Today's Late List -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 card-shadow overflow-hidden">
+          <div class="gradient-header px-5 py-3 flex items-center justify-between">
+            <h2 class="text-white font-bold text-sm">Siswa Terlambat Hari Ini</h2>
+            <button onclick="loadDashboard()" class="text-white/80 hover:text-white text-xs px-2 py-1 rounded-lg bg-white/10">&#8635; Refresh</button>
+          </div>
+          <div id="today-late-list" class="p-4 divide-y divide-gray-100 dark:divide-gray-700 max-h-80 overflow-y-auto scrollbar-thin">
+            <p class="text-sm text-gray-400 text-center py-8">Memuat data...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ATTENDANCE -->
+      <div id="page-attendance" class="page-content hidden space-y-4">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Presensi Kesiangan</h1>
+          <p id="att-date-label" class="text-sm text-gray-500 mt-0.5"></p>
+        </div>
+        <!-- Class Tabs -->
+        <div class="flex gap-2 flex-wrap" id="class-tabs"></div>
+        <!-- Search -->
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">&#128269;</span>
+          <input id="att-search" type="text" placeholder="Cari nama siswa..." oninput="renderStudentGrid()" class="w-full h-10 pl-9 pr-3 rounded-xl border-2 border-gray-200 dark:bg-gray-800 dark:border-gray-600 dark:text-white text-sm">
+        </div>
+        <!-- Student Grid -->
+        <div id="student-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2"></div>
+      </div>
+
+      <!-- REPORTS -->
+      <div id="page-reports" class="page-content hidden space-y-4">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Laporan</h1>
+            <p class="text-sm text-gray-500 mt-0.5">Data rekap keterlambatan siswa</p>
+          </div>
+          <div class="flex gap-2 flex-wrap">
+            <button onclick="exportExcel()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border-2 border-green-200 text-green-700 hover:bg-green-50">&#128196; Excel</button>
+            <button onclick="exportPdf()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border-2 border-red-200 text-red-600 hover:bg-red-50">&#128196; PDF</button>
+            <button onclick="exportHtml()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border-2 border-blue-200 text-blue-600 hover:bg-blue-50">&#127760; HTML</button>
+          </div>
+        </div>
+        <!-- Filters -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 p-4 card-shadow">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div>
+              <label class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1 block">Periode</label>
+              <select id="rpt-period" onchange="onPeriodChange()" class="w-full h-9 px-2 rounded-lg border-2 border-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
+                <option value="today">Hari Ini</option>
+                <option value="week" selected>Minggu Ini</option>
+                <option value="month">Bulan Ini</option>
+                <option value="custom">Rentang Tanggal</option>
+              </select>
+            </div>
+            <div id="rpt-custom-start-wrap" class="hidden">
+              <label class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1 block">Dari</label>
+              <input id="rpt-start" type="date" class="w-full h-9 px-2 rounded-lg border-2 border-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
+            </div>
+            <div id="rpt-custom-end-wrap" class="hidden">
+              <label class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1 block">Sampai</label>
+              <input id="rpt-end" type="date" class="w-full h-9 px-2 rounded-lg border-2 border-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1 block">Kelas</label>
+              <select id="rpt-class" class="w-full h-9 px-2 rounded-lg border-2 border-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
+                <option value="">Semua Kelas</option>
+                <option value="xi-to">XI TO</option>
+                <option value="xi-tjkt-1">XI TJKT 1</option>
+                <option value="xi-tjkt-2">XI TJKT 2</option>
+                <option value="xi-mplb">XI MPLB</option>
+                <option value="x-to">X TO</option>
+                <option value="x-tjkt">X TJKT</option>
+                <option value="x-mplb">X MPLB</option>
+              </select>
+            </div>
+            <div class="flex items-end">
+              <button onclick="loadReports()" class="w-full h-9 gradient-header text-white text-sm font-bold rounded-lg hover:opacity-90">&#128269; Cari</button>
+            </div>
+          </div>
+        </div>
+        <!-- Table -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 card-shadow overflow-hidden">
+          <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="font-bold text-sm text-gray-800 dark:text-white">Daftar Kesiangan</h3>
+            <span id="rpt-count" class="text-xs text-gray-400">0 data</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-green-50 dark:bg-green-900/20">
+                <tr>
+                  <th class="text-left px-4 py-3 text-xs font-bold text-green-800 dark:text-green-400 uppercase tracking-wide">No</th>
+                  <th class="text-left px-4 py-3 text-xs font-bold text-green-800 dark:text-green-400 uppercase tracking-wide">Nama Siswa</th>
+                  <th class="text-left px-4 py-3 text-xs font-bold text-green-800 dark:text-green-400 uppercase tracking-wide">Kelas</th>
+                  <th class="text-left px-4 py-3 text-xs font-bold text-green-800 dark:text-green-400 uppercase tracking-wide">Tanggal</th>
+                  <th class="text-center px-4 py-3 text-xs font-bold text-green-800 dark:text-green-400 uppercase tracking-wide">Jml</th>
+                  <th class="text-left px-4 py-3 text-xs font-bold text-green-800 dark:text-green-400 uppercase tracking-wide">Jam</th>
+                </tr>
+              </thead>
+              <tbody id="rpt-tbody" class="divide-y divide-gray-100 dark:divide-gray-700">
+                <tr><td colspan="6" class="text-center py-10 text-gray-400">Pilih periode dan klik Cari</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="page-settings" class="page-content hidden space-y-5 max-w-2xl">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Pengaturan</h1>
+          <p class="text-sm text-gray-500 mt-0.5">Konfigurasi sistem</p>
+        </div>
+        <div id="settings-success" class="hidden flex items-center gap-3 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm font-medium"></div>
+        <!-- Late Time -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 card-shadow overflow-hidden">
+          <div class="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center text-lg" style="background:rgba(29,107,61,0.1)">&#9200;</div>
+            <div>
+              <h2 class="font-bold text-gray-900 dark:text-white text-sm">Waktu Batas Keterlambatan</h2>
+              <p class="text-xs text-gray-500">Siswa hadir setelah waktu ini dihitung terlambat</p>
+            </div>
+          </div>
+          <div class="p-5">
+            <div class="grid grid-cols-4 gap-2" id="late-time-grid"></div>
+          </div>
+        </div>
+        <!-- Password Change -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 card-shadow overflow-hidden">
+          <div class="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center text-lg" style="background:rgba(37,99,235,0.1)">&#128273;</div>
+            <div>
+              <h2 class="font-bold text-gray-900 dark:text-white text-sm">Ubah Password Admin</h2>
+              <p class="text-xs text-gray-500">Perlu verifikasi OTP via wildanspndi24@gmail.com</p>
+            </div>
+          </div>
+          <div id="pw-section" class="p-5">
+            <!-- pw-step-idle -->
+            <div id="pw-idle" class="text-center py-4">
+              <div class="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center text-2xl" style="background:rgba(37,99,235,0.08)">&#128274;</div>
+              <p class="text-sm text-gray-500 mb-4">Perubahan password memerlukan konfirmasi OTP ke <strong class="text-gray-800 dark:text-white">wildanspndi24@gmail.com</strong></p>
+              <button onclick="pwStartForm()" class="px-4 py-2 rounded-xl border-2 border-gray-200 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 flex items-center gap-2 mx-auto">&#128273; Mulai Ubah Password &#8250;</button>
+            </div>
+            <!-- pw-step-form -->
+            <div id="pw-form" class="hidden space-y-4">
+              <div class="flex items-center gap-2 mb-1">
+                <button onclick="pwReset()" class="text-gray-400 hover:text-gray-600">&#8592;</button>
+                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Langkah 1 dari 2 — Isi Password</span>
+              </div>
+              <div class="flex gap-2 mb-3"><div class="flex-1 h-1.5 rounded-full" style="background:#1d6b3d"></div><div class="flex-1 h-1.5 rounded-full bg-gray-200"></div></div>
+              <div id="pw-form-error" class="hidden p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs font-medium"></div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-1">Password Saat Ini</label>
+                <input id="pw-current" type="password" placeholder="Password lama" class="w-full h-10 px-3 rounded-lg border-2 border-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-1">Password Baru (min 6 karakter)</label>
+                <input id="pw-new" type="password" placeholder="Password baru" class="w-full h-10 px-3 rounded-lg border-2 border-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-1">Konfirmasi Password Baru</label>
+                <input id="pw-confirm" type="password" placeholder="Ulangi password baru" class="w-full h-10 px-3 rounded-lg border-2 border-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
+              </div>
+              <button onclick="pwRequestOtp()" class="w-full h-10 gradient-header text-white text-sm font-bold rounded-lg hover:opacity-90">&#128231; Kirim OTP ke wildanspndi24@gmail.com</button>
+            </div>
+            <!-- pw-step-otp -->
+            <div id="pw-otp" class="hidden space-y-4">
+              <div class="flex items-center gap-2 mb-1">
+                <button onclick="pwShowForm()" class="text-gray-400 hover:text-gray-600">&#8592;</button>
+                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Langkah 2 dari 2 — Masukkan OTP</span>
+              </div>
+              <div class="flex gap-2 mb-3"><div class="flex-1 h-1.5 rounded-full" style="background:#1d6b3d"></div><div class="flex-1 h-1.5 rounded-full" style="background:#1d6b3d"></div></div>
+              <div class="p-4 rounded-xl border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
+                <p class="text-sm font-bold text-blue-800 dark:text-blue-300">&#128231; Cek Email Admin</p>
+                <p class="text-xs text-blue-700 dark:text-blue-400 mt-1">OTP dikirim ke <strong>wildanspndi24@gmail.com</strong>. Minta admin berikan kode 6 digit. Berlaku 30 menit.</p>
+              </div>
+              <div id="pw-otp-error" class="hidden p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs font-medium"></div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-1">Kode OTP (6 digit)</label>
+                <input id="pw-otp-input" type="text" inputmode="numeric" maxlength="6" placeholder="123456" oninput="this.value=this.value.replace(/\D/g,'').slice(0,6)" class="w-full h-14 px-3 rounded-lg border-2 border-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-2xl font-mono font-bold text-center tracking-widest">
+              </div>
+              <button onclick="pwVerifyOtp()" class="w-full h-10 gradient-header text-white text-sm font-bold rounded-lg hover:opacity-90">&#9989; Verifikasi & Ubah Password</button>
+              <button onclick="pwShowForm()" class="w-full text-xs text-gray-400 hover:text-gray-600 py-1">Belum terima OTP? Kirim ulang</button>
+            </div>
+            <!-- pw-step-success -->
+            <div id="pw-success" class="hidden text-center py-6">
+              <div class="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center text-3xl" style="background:#dcfce7">&#10004;</div>
+              <h3 class="font-bold text-gray-900 dark:text-white text-lg mb-2">Password Berhasil Diubah!</h3>
+              <p class="text-sm text-gray-500 mb-5">Gunakan password baru saat login berikutnya.</p>
+              <button onclick="pwReset()" class="px-4 py-2 rounded-xl border-2 border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50">&#10004; Selesai</button>
+            </div>
+          </div>
+        </div>
+        <!-- Reset -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 card-shadow overflow-hidden">
+          <div class="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center text-lg" style="background:rgba(234,88,12,0.1)">&#128465;</div>
+            <div>
+              <h2 class="font-bold text-gray-900 dark:text-white text-sm">Reset Data Presensi</h2>
+              <p class="text-xs text-gray-500">Hapus semua data keterlambatan — data siswa &amp; kelas aman</p>
+            </div>
+          </div>
+          <div class="p-5">
+            <div class="flex items-center justify-between p-4 rounded-xl border-2 border-orange-200 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-800">
+              <div>
+                <p class="font-semibold text-sm text-orange-800 dark:text-orange-300">Reset Keterlambatan</p>
+                <p class="text-xs text-orange-600 dark:text-orange-400">Semua data kesiangan dihapus. Nama siswa dan kelas tidak terpengaruh.</p>
+              </div>
+              <button onclick="confirmResetAtt()" class="ml-3 px-3 py-2 rounded-xl text-xs font-bold border-2 border-orange-300 text-orange-700 hover:bg-orange-100 flex-shrink-0">&#8635; Reset</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- RESET MODAL -->
+<div id="reset-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+    <h3 class="font-bold text-orange-700 text-lg mb-2">&#9888; Reset Data Presensi</h3>
+    <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">Semua data keterlambatan akan dihapus permanen. Data siswa dan kelas aman.</p>
+    <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">Ketik <strong>RESET</strong> untuk konfirmasi:</p>
+    <input id="reset-confirm-input" type="text" placeholder="Ketik RESET" class="w-full h-10 px-3 rounded-lg border-2 border-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm font-mono mb-4">
+    <div class="flex gap-2">
+      <button onclick="closeResetModal()" class="flex-1 h-10 rounded-lg border-2 border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50">Batal</button>
+      <button id="reset-confirm-btn" onclick="doResetAttendance()" class="flex-1 h-10 rounded-lg bg-red-600 text-white text-sm font-bold hover:bg-red-700 disabled:opacity-50">Hapus Data</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// FIREBASE CONFIG
+// ============================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyCsgvqHQpz2U7EBfZuv9nVmwyW9aGFccIQ",
+  authDomain: "pendataan-kesiangan2026.firebaseapp.com",
+  databaseURL: "https://pendataan-kesiangan2026-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "pendataan-kesiangan2026",
+  storageBucket: "pendataan-kesiangan2026.firebasestorage.app",
+  messagingSenderId: "676697085849",
+  appId: "1:676697085849:web:d7e8aed3ff1e14dcde6b39"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ============================================================
+// STUDENT DATA
+// ============================================================
+const CLASSES = [
+  {id:'xi-to',name:'XI TO'},{id:'xi-tjkt-1',name:'XI TJKT 1'},{id:'xi-tjkt-2',name:'XI TJKT 2'},
+  {id:'xi-mplb',name:'XI MPLB'},{id:'x-to',name:'X TO'},{id:'x-tjkt',name:'X TJKT'},{id:'x-mplb',name:'X MPLB'}
+];
+const STUDENTS = [
+  {id:'s1',name:'A. Rochman Djaelani',classId:'xi-to',className:'XI TO'},
+  {id:'s2',name:'Aerlangga Alfarizy',classId:'xi-to',className:'XI TO'},
+  {id:'s3',name:'Ananda Putra Nugraha',classId:'xi-to',className:'XI TO'},
+  {id:'s4',name:'Anaya Galang Saputra',classId:'xi-to',className:'XI TO'},
+  {id:'s5',name:'Fakhri Fauzan',classId:'xi-to',className:'XI TO'},
+  {id:'s6',name:'Fauzan Adam Juliana Putra',classId:'xi-to',className:'XI TO'},
+  {id:'s7',name:'Guruh Deandra Putra',classId:'xi-to',className:'XI TO'},
+  {id:'s8',name:'Hardiansyah',classId:'xi-to',className:'XI TO'},
+  {id:'s9',name:'Helmi Maulana',classId:'xi-to',className:'XI TO'},
+  {id:'s10',name:'Ilham Muhamad Ritazul Arifin',classId:'xi-to',className:'XI TO'},
+  {id:'s11',name:'Imam Jamasari',classId:'xi-to',className:'XI TO'},
+  {id:'s12',name:'Juandi Alrasyid',classId:'xi-to',className:'XI TO'},
+  {id:'s13',name:'M Bintang Pebriyansah',classId:'xi-to',className:'XI TO'},
+  {id:'s14',name:'M Fadhil Alfajri',classId:'xi-to',className:'XI TO'},
+  {id:'s15',name:'M Rehan Dika',classId:'xi-to',className:'XI TO'},
+  {id:'s16',name:'M Rezki Agustian',classId:'xi-to',className:'XI TO'},
+  {id:'s17',name:'M. Bintang Pratama',classId:'xi-to',className:'XI TO'},
+  {id:'s18',name:'M. Ramdan Herdiansyah',classId:'xi-to',className:'XI TO'},
+  {id:'s19',name:'M. Rifki Aditya',classId:'xi-to',className:'XI TO'},
+  {id:'s20',name:'Miftahul Fariz',classId:'xi-to',className:'XI TO'},
+  {id:'s21',name:'Moch Husni Mubarokh',classId:'xi-to',className:'XI TO'},
+  {id:'s22',name:'Muhammad Azka Maulana',classId:'xi-to',className:'XI TO'},
+  {id:'s23',name:'Muhamad Al Ghifari',classId:'xi-to',className:'XI TO'},
+  {id:'s24',name:'Muhamad Arya Wiratama',classId:'xi-to',className:'XI TO'},
+  {id:'s25',name:'Muhamad Nur Ihsan',classId:'xi-to',className:'XI TO'},
+  {id:'s26',name:'Muhammad Adrian',classId:'xi-to',className:'XI TO'},
+  {id:'s27',name:'Muhammad Alfiansyah',classId:'xi-to',className:'XI TO'},
+  {id:'s28',name:'Muhammad Azwan Al Buchori',classId:'xi-to',className:'XI TO'},
+  {id:'s29',name:'Muhammad Farhan Firdaus',classId:'xi-to',className:'XI TO'},
+  {id:'s30',name:'Muhammad Fauji',classId:'xi-to',className:'XI TO'},
+  {id:'s31',name:'Muhammad Siddiq Firmansyah',classId:'xi-to',className:'XI TO'},
+  {id:'s32',name:'Nendi Sanjaya',classId:'xi-to',className:'XI TO'},
+  {id:'s33',name:'Pirdan Maulana',classId:'xi-to',className:'XI TO'},
+  {id:'s34',name:'Rahman Mustopa',classId:'xi-to',className:'XI TO'},
+  {id:'s35',name:'Rifki Adriansyah',classId:'xi-to',className:'XI TO'},
+  {id:'s36',name:'Ripki Ramdani',classId:'xi-to',className:'XI TO'},
+  {id:'s37',name:'Rivansyah',classId:'xi-to',className:'XI TO'},
+  {id:'s38',name:'Riyan Hidayatuloh',classId:'xi-to',className:'XI TO'},
+  {id:'s39',name:'Rizki Fathani Aziz',classId:'xi-to',className:'XI TO'},
+  {id:'s40',name:'Rizky Abdurahman',classId:'xi-to',className:'XI TO'},
+  {id:'s41',name:'Satria Nurfirsatuloh',classId:'xi-to',className:'XI TO'},
+  {id:'s42',name:'Yadi Permana Sidik',classId:'xi-to',className:'XI TO'},
+  {id:'s43',name:'Zaki Muhamad Hanavi',classId:'xi-to',className:'XI TO'},
+  {id:'s44',name:'M Arya Ramadhan',classId:'xi-to',className:'XI TO'},
+  {id:'s45',name:'Aang Maulana',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s46',name:'Adit Maulana',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s47',name:'Amir Rahman',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s48',name:'Ananda Rizky Kukuh Adi Syahputra',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s49',name:'Dimas Gustian',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s50',name:'Dina Pratiwi',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s51',name:'Fadli Iskandar',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s52',name:'Heksa Muhammad Zacky',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s53',name:'M Dika Permana',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s54',name:'M. Nazwar Maulana Junaedi',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s55',name:'Marlin Andini Hestiana',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s56',name:'Mochamad Fauzi Rismanto',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s57',name:'Mochammad Fhajar Syaputra',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s58',name:'Muhamad Fakhri Azhuri',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s59',name:'Muhamad Iman Rohman',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s60',name:'Muhammad Fauzi Maulana',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s61',name:'Muhammad Ilyas',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s62',name:'Muhammad Rifki Ramadan',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s63',name:'Muhammad Sopiyan',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s64',name:'Raka Al Farizi',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s65',name:'Randi Rustandi Rahman',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s66',name:'Salma Prihartini',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s67',name:'Salsa Safitri',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s68',name:'Siti Nuraidah',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s69',name:'Sulaeman',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s70',name:'Suryadi',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s71',name:'Hisam Fauzi',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s72',name:'Muhammad Fauzi Zikram Muharam',classId:'xi-tjkt-1',className:'XI TJKT 1'},
+  {id:'s73',name:'Agfi Abdul Salam',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s74',name:'Ahmad Amirudin',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s75',name:'Arip',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s76',name:'Derisvan Irsandi',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s77',name:'Fawaj Amanulloh',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s78',name:'Hasna',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s79',name:'Indra Setiawan',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s80',name:'Lira Afriyanti',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s81',name:'M Nasir Abdul Zabar',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s82',name:'M. Zam Zam Saerul Lana',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s83',name:'M.Raihan Apriliyan',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s84',name:'Moh Luky Kurniawan',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s85',name:'Muhamad Ramdani',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s86',name:'Muhamad Rizky Setiawan',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s87',name:'Muhammad Maulana Yusup Hermawan',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s88',name:'Muhammad Yusup',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s89',name:'Nuri Syafiina',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s90',name:'Nurika Maya Agustina',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s91',name:'Raka Yudistira Azhar',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s92',name:'Rin Rin Maspuroh',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s93',name:'Silfia Siti Salsa',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s94',name:'Siti Fitriani',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s95',name:'Wildan Nur Ilyasa',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s96',name:'Muhammad Rizki Fadilah',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s97',name:'Muhamad Rifaldi Saputra',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s98',name:'Muhammad Abdul Kodir Jaelani',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s99',name:'Salma Nurkholizah',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s100',name:'Muhammad Raihan',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s101',name:'Memey Santika Lestari',classId:'xi-tjkt-2',className:'XI TJKT 2'},
+  {id:'s102',name:'Ajela Fitria Julva',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s103',name:'Amalia Hasna',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s104',name:'Anisa Septiani Fitri',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s105',name:'Annisa Fauziah',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s106',name:'Annisa Nur Maulidia',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s107',name:'Defyta Sri Haryani',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s108',name:'Destri Herdiawati',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s109',name:'Gita Siti Fadilah',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s110',name:'Lesti Lianita',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s111',name:'Lusi Sulistiawati',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s112',name:'Mutia Nurlita',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s113',name:'Nadia Febriani',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s114',name:"Najwa Syahrul Ma'Wa",classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s115',name:'Nanah Ramdanah',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s116',name:'Nayla Septiani Kristiawan',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s117',name:'Nisrina Hanizias',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s118',name:'Nurul Patimah',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s119',name:'Rahma Maulida',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s120',name:'Ratna Seza',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s121',name:'Resti Septi Ramadani',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s122',name:'Saika Moza Aulia',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s123',name:'Salsyah Nuraeni Tri Rizki',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s124',name:'Saripah Oktapiyani',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s125',name:'Selomita Azahra Hoirunnisa',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s126',name:'Sherly Yulianti Safitri',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s127',name:'Siti Amelia',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s128',name:'Siti Ane Ayunindia',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s129',name:'Siti Azkia Adawiah',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s130',name:'Siti Nurfitriyani Azzahra',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s131',name:'Siti Rahmawati',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s132',name:"Siti Rubai'ah Adawiyah",classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s133',name:'Siti Salwa',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s134',name:'Siti Sopiah',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s135',name:'Tiara Novi Yanti',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s136',name:'Tri Safitri',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s137',name:'Vhannesya Nayya Parsaulian Sitompul',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s138',name:'Yusri Billah Azzahra',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s139',name:'Riska Amelia Hernayanti',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s140',name:'Maya Siti Agustiani',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s141',name:'Marisa Putri Soraya',classId:'xi-mplb',className:'XI MPLB'},
+  {id:'s142',name:'Afriana',classId:'x-to',className:'X TO'},
+  {id:'s143',name:'Ahmad Nopal',classId:'x-to',className:'X TO'},
+  {id:'s144',name:'Arya Ramadhan',classId:'x-to',className:'X TO'},
+  {id:'s145',name:'Beny Satria Putra',classId:'x-to',className:'X TO'},
+  {id:'s146',name:'Devano Nandika',classId:'x-to',className:'X TO'},
+  {id:'s147',name:'Hadi Maulana',classId:'x-to',className:'X TO'},
+  {id:'s148',name:'Irwansyah',classId:'x-to',className:'X TO'},
+  {id:'s149',name:'M Fahri Prasetya',classId:'x-to',className:'X TO'},
+  {id:'s150',name:'M. Irpan Abdurohman',classId:'x-to',className:'X TO'},
+  {id:'s151',name:'M Rapa Ibrahim',classId:'x-to',className:'X TO'},
+  {id:'s152',name:'M Wildan Humaezi',classId:'x-to',className:'X TO'},
+  {id:'s153',name:'Maulana',classId:'x-to',className:'X TO'},
+  {id:'s154',name:'Moch Bagus Tri Ramadhan',classId:'x-to',className:'X TO'},
+  {id:'s155',name:'Moh Aldi Febrian',classId:'x-to',className:'X TO'},
+  {id:'s156',name:'Muhamad Sandika',classId:'x-to',className:'X TO'},
+  {id:'s157',name:'Muhamad Arfan Hawari',classId:'x-to',className:'X TO'},
+  {id:'s158',name:'Muhamad Helmi Palyani',classId:'x-to',className:'X TO'},
+  {id:'s159',name:'Muhamad Putra Aryagung',classId:'x-to',className:'X TO'},
+  {id:'s160',name:'Muhamad Saepul Hidayat',classId:'x-to',className:'X TO'},
+  {id:'s161',name:"Muhammad Ali Sa'Ban",classId:'x-to',className:'X TO'},
+  {id:'s162',name:'Muhammad Fajar Al-Farizi',classId:'x-to',className:'X TO'},
+  {id:'s163',name:'Muhammad Lutfi Hadi Pratama',classId:'x-to',className:'X TO'},
+  {id:'s164',name:'Muhammad Raihan Dwi Saputra',classId:'x-to',className:'X TO'},
+  {id:'s165',name:'Muhammad Rizki Fauzi',classId:'x-to',className:'X TO'},
+  {id:'s166',name:'Muhammad Rizki Pratama',classId:'x-to',className:'X TO'},
+  {id:'s167',name:'Muhammad Zhidan Maulid Ramdani',classId:'x-to',className:'X TO'},
+  {id:'s168',name:'Radhi Riyadi',classId:'x-to',className:'X TO'},
+  {id:'s169',name:'Raditya Avrizal',classId:'x-to',className:'X TO'},
+  {id:'s170',name:'Raditya Firmansyah',classId:'x-to',className:'X TO'},
+  {id:'s171',name:'Rahmat',classId:'x-to',className:'X TO'},
+  {id:'s172',name:'Rifky Zatmika',classId:'x-to',className:'X TO'},
+  {id:'s173',name:'Sani Kurniawan',classId:'x-to',className:'X TO'},
+  {id:'s174',name:'Yuri Rahmat Saleh',classId:'x-to',className:'X TO'},
+  {id:'s175',name:'Muhamad Abdul Pahdi',classId:'x-to',className:'X TO'},
+  {id:'s176',name:'Alif Muhamad Al Zikri',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s177',name:'Alip Abdul Patah',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s178',name:'Angga Maulana Kusumah',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s179',name:'Anisa Sri Aulia',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s180',name:'Ayudia Irawan',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s181',name:'Cep Isya Ansori',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s182',name:'Cep Salman Aziz',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s183',name:'Derin Regina Astuti',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s184',name:'Desti Fitri Septiani',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s185',name:'Deva Haidar Rafif Haryadi',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s186',name:'Dina Inayah',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s187',name:'Fajar',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s188',name:'Firda Ferdianti',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s189',name:'Firman Abdul Majid',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s190',name:'Hendi Juandi',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s191',name:'M Rokib Alamsyah',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s192',name:'M. Angga Rusmana',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s193',name:'Moch Fahri Idris',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s194',name:'Moch. Firmansah',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s195',name:"Mochamad Daffa Al Faa'Iz Setiawan",classId:'x-tjkt',className:'X TJKT'},
+  {id:'s196',name:'Muhamad Azkiya Azis',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s197',name:'Muhammad Habibi Arsya Agniya',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s198',name:'Muhammad Irgi Farid',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s199',name:'Muhammad Nabil Al Haqqi',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s200',name:'Muhammad Razib Al Rahmat',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s201',name:'Muhammad Yahya Wijaya',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s202',name:'Nadila Rahma Aulia',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s203',name:'Nayla Ramziah',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s204',name:'Neng Jahra Fusfita',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s205',name:'Qirani Nur Friza',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s206',name:'Raisa Maulana Firmansyah',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s207',name:'Reza Pratama',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s208',name:'Rifat Nur Alamsyah',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s209',name:'Rizki Maulana',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s210',name:'Silvia Nurul Isnaini',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s211',name:'Siti Choerunisa Pertiwi',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s212',name:'Siti Salsabila Mulyasari',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s213',name:'Siti Yaspi Sopi Mariyah',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s214',name:'Syamsul Munawar',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s215',name:'Vania Febriani',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s216',name:'Zulfan Azhar Maulana',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s217',name:'Aiman Afdhal Nauf',classId:'x-tjkt',className:'X TJKT'},
+  {id:'s218',name:'Ajeng Airil Azmi',classId:'x-mplb',className:'X MPLB'},
+  {id:'s219',name:'Alya Alfadiyah',classId:'x-mplb',className:'X MPLB'},
+  {id:'s220',name:'Asha Syauqi Bintang Maulida',classId:'x-mplb',className:'X MPLB'},
+  {id:'s221',name:'Asya Siti Pedana',classId:'x-mplb',className:'X MPLB'},
+  {id:'s222',name:'Aulia Putri',classId:'x-mplb',className:'X MPLB'},
+  {id:'s223',name:'Citra Nurahmah',classId:'x-mplb',className:'X MPLB'},
+  {id:'s224',name:'Dini Balqis Faiha',classId:'x-mplb',className:'X MPLB'},
+  {id:'s225',name:'Elsa Cahyati',classId:'x-mplb',className:'X MPLB'},
+  {id:'s226',name:'Erina Fauziah',classId:'x-mplb',className:'X MPLB'},
+  {id:'s227',name:'Fitri Salsabila',classId:'x-mplb',className:'X MPLB'},
+  {id:'s228',name:'Gina Agustina',classId:'x-mplb',className:'X MPLB'},
+  {id:'s229',name:'Hasniah Adrikni',classId:'x-mplb',className:'X MPLB'},
+  {id:'s230',name:'Herawati Puspitasari',classId:'x-mplb',className:'X MPLB'},
+  {id:'s231',name:'Keysha Nuralifa',classId:'x-mplb',className:'X MPLB'},
+  {id:'s232',name:'Meilinda Siti Maspupah',classId:'x-mplb',className:'X MPLB'},
+  {id:'s233',name:'Nabila Nurul Anbiya',classId:'x-mplb',className:'X MPLB'},
+  {id:'s234',name:'Nadya Fitria Yulianti',classId:'x-mplb',className:'X MPLB'},
+  {id:'s235',name:'Neng Elsa Safitri',classId:'x-mplb',className:'X MPLB'},
+  {id:'s236',name:'Neng Rajma Erlianti',classId:'x-mplb',className:'X MPLB'},
+  {id:'s237',name:'Neng Salma Seftiyani',classId:'x-mplb',className:'X MPLB'},
+  {id:'s238',name:'Neyra Putri Friandis',classId:'x-mplb',className:'X MPLB'},
+  {id:'s239',name:'Nova Novita',classId:'x-mplb',className:'X MPLB'},
+  {id:'s240',name:'Putri Regina',classId:'x-mplb',className:'X MPLB'},
+  {id:'s241',name:'Rastianika Putri Marlina',classId:'x-mplb',className:'X MPLB'},
+  {id:'s242',name:'Reni Nur Anggraeni',classId:'x-mplb',className:'X MPLB'},
+  {id:'s243',name:'Renita Apriliyani',classId:'x-mplb',className:'X MPLB'},
+  {id:'s244',name:'Reva Novianti',classId:'x-mplb',className:'X MPLB'},
+  {id:'s245',name:'Revia Laelatus Syafariah',classId:'x-mplb',className:'X MPLB'},
+  {id:'s246',name:'Rismawanti',classId:'x-mplb',className:'X MPLB'},
+  {id:'s247',name:'Riyanti Novala Sari',classId:'x-mplb',className:'X MPLB'},
+  {id:'s248',name:'Sarah Muzdalipah',classId:'x-mplb',className:'X MPLB'},
+  {id:'s249',name:'Sela Amalia',classId:'x-mplb',className:'X MPLB'},
+  {id:'s250',name:'Silvia Septiana',classId:'x-mplb',className:'X MPLB'},
+  {id:'s251',name:'Siti Anisa',classId:'x-mplb',className:'X MPLB'},
+  {id:'s252',name:'Siti Aurora Risda Handayani',classId:'x-mplb',className:'X MPLB'},
+  {id:'s253',name:'Siti Azka Fauziah Suhendar',classId:'x-mplb',className:'X MPLB'},
+  {id:'s254',name:'Siti Nuraeni',classId:'x-mplb',className:'X MPLB'},
+  {id:'s255',name:"Siti Siva'u Rahmah",classId:'x-mplb',className:'X MPLB'},
+  {id:'s256',name:'Syifa Mulyani',classId:'x-mplb',className:'X MPLB'},
+  {id:'s257',name:'Vira Sasmita Handriyani',classId:'x-mplb',className:'X MPLB'},
+  {id:'s258',name:'Zazma',classId:'x-mplb',className:'X MPLB'},
+  {id:'s259',name:'Pani Hardianti',classId:'x-mplb',className:'X MPLB'},
+  {id:'s260',name:'Zulfia Zahra',classId:'x-mplb',className:'X MPLB'},
+  {id:'s261',name:'Natasya Azizah Johan',classId:'x-mplb',className:'X MPLB'},
+  {id:'s262',name:'Keyla Noer Febryanti',classId:'x-mplb',className:'X MPLB'},
+  {id:'s263',name:'Azhar Pratami Ramadina',classId:'x-mplb',className:'X MPLB'},
+];
+
+// ============================================================
+// APP STATE
+// ============================================================
+const state = {
+  isLoggedIn: !!localStorage.getItem('smk_auth'),
+  isDark: localStorage.getItem('smk_theme') === 'dark',
+  currentPage: 'dashboard',
+  currentClassId: 'xi-to',
+  todayStr: '',
+  todayAttendance: {},
+  lateTime: '07:00',
+  currentPassword: 'rujakuleg12345',
+  pendingNewPass: '',
+  pendingOtp: '',
+  reportRows: [],
+};
+
+// ============================================================
+// UTILS
+// ============================================================
+function padZ(n) { return String(n).padStart(2,'0'); }
+function todayKey() {
+  const d = new Date();
+  return d.getFullYear()+'-'+padZ(d.getMonth()+1)+'-'+padZ(d.getDate());
+}
+function dateLabel(str) {
+  if(!str) return '';
+  const d = new Date(str+'T00:00:00');
+  return d.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+function weekRange() {
+  const now = new Date();
+  const day = now.getDay();
+  const mon = new Date(now);
+  mon.setDate(now.getDate() - (day===0?6:day-1));
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate()+6);
+  return [fmtDate(mon), fmtDate(sun)];
+}
+function monthRange() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth()+1, 0);
+  return [fmtDate(start), fmtDate(end)];
+}
+function fmtDate(d) {
+  return d.getFullYear()+'-'+padZ(d.getMonth()+1)+'-'+padZ(d.getDate());
+}
+function datesInRange(start, end) {
+  const dates = [];
+  const cur = new Date(start+'T00:00:00');
+  const endD = new Date(end+'T00:00:00');
+  while(cur <= endD) {
+    dates.push(fmtDate(cur));
+    cur.setDate(cur.getDate()+1);
+  }
+  return dates;
+}
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function showToast(msg, type='success') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast toast-'+(type==='success'?'success':'error');
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(()=>t.remove(), 3000);
+}
+function genOtp() { return String(Math.floor(100000+Math.random()*900000)); }
+
+// ============================================================
+// CLOCK
+// ============================================================
+function updateClocks() {
+  const now = new Date();
+  const t = padZ(now.getHours())+':'+padZ(now.getMinutes())+':'+padZ(now.getSeconds());
+  const d = now.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  ['login-clock','app-clock','mobile-clock'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t;});
+  ['login-date','app-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=d;});
+}
+setInterval(updateClocks, 1000);
+updateClocks();
+
+// ============================================================
+// DARK MODE
+// ============================================================
+function applyDark() {
+  if(state.isDark) {
+    document.documentElement.classList.add('dark');
+    const tb = document.getElementById('theme-btn');
+    const tt = document.getElementById('theme-thumb');
+    if(tb) tb.style.background='#1d6b3d';
+    if(tt) tt.style.transform='translateX(1.25rem)';
+  } else {
+    document.documentElement.classList.remove('dark');
+    const tb = document.getElementById('theme-btn');
+    const tt = document.getElementById('theme-thumb');
+    if(tb) tb.style.background='#e5e7eb';
+    if(tt) tt.style.transform='translateX(0.125rem)';
+  }
+}
+function toggleDark() {
+  state.isDark = !state.isDark;
+  localStorage.setItem('smk_theme', state.isDark?'dark':'light');
+  applyDark();
+}
+applyDark();
+
+// ============================================================
+// ONLINE STATUS
+// ============================================================
+function updateOnlineBadge(online) {
+  const badge = document.getElementById('online-badge');
+  const loginBadge = document.getElementById('login-online-badge');
+  if(badge) {
+    if(online) {
+      badge.className='flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border bg-green-50 border-green-300 text-green-700';
+      badge.innerHTML='<span class="relative flex h-2 w-2"><span class="ping-green absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span></span> Online';
+    } else {
+      badge.className='flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border bg-red-50 border-red-300 text-red-700';
+      badge.innerHTML='<span class="h-2 w-2 rounded-full bg-red-500"></span> Offline';
+    }
+  }
+  if(loginBadge) {
+    if(online) {
+      loginBadge.className='flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border bg-green-50 border-green-300 text-green-700';
+      loginBadge.innerHTML='<span class="relative flex h-2 w-2"><span class="ping-green absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span></span> &#128246; Online';
+    } else {
+      loginBadge.className='flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border bg-red-50 border-red-300 text-red-600';
+      loginBadge.innerHTML='<span class="h-2 w-2 rounded-full bg-red-500"></span> Offline';
+    }
+  }
+}
+db.ref('.info/connected').on('value', snap => updateOnlineBadge(!!snap.val()));
+
+// ============================================================
+// AUTH
+// ============================================================
+function togglePassVis() {
+  const inp = document.getElementById('login-pass');
+  inp.type = inp.type==='password'?'text':'password';
+}
+async function doLogin() {
+  const user = document.getElementById('login-user').value.trim().toLowerCase();
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  if(user !== 'admin@gmail.com') { errEl.textContent='Username salah'; errEl.classList.remove('hidden'); return; }
+  const btn = document.getElementById('login-btn');
+  btn.disabled=true; btn.textContent='Memeriksa...';
+  try {
+    const snap = await db.ref('settings/password').once('value');
+    const storedPass = snap.exists() ? snap.val() : 'rujakuleg12345';
+    state.currentPassword = storedPass;
+    if(pass === storedPass) {
+      localStorage.setItem('smk_auth','true');
+      state.isLoggedIn = true;
+      errEl.classList.add('hidden');
+      showApp();
+    } else {
+      errEl.textContent='Password salah'; errEl.classList.remove('hidden');
+    }
+  } catch(e) { errEl.textContent='Gagal terhubung ke server'; errEl.classList.remove('hidden'); }
+  btn.disabled=false; btn.innerHTML='<span>&#128275;</span> Masuk ke Sistem';
+}
+function doLogout() {
+  if(!confirm('Yakin ingin keluar?')) return;
+  localStorage.removeItem('smk_auth');
+  state.isLoggedIn=false;
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+}
+
+// ============================================================
+// SHOW APP
+// ============================================================
+function showApp() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  db.ref('settings/password').on('value', s => { if(s.exists()) state.currentPassword=s.val(); });
+  db.ref('settings/lateTime').on('value', s => {
+    state.lateTime = s.exists() ? s.val() : '07:00';
+    document.getElementById('stat-latetime').textContent = state.lateTime;
+    renderLateTimeGrid();
+  });
+  showPage('dashboard');
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showPage(page) {
+  state.currentPage = page;
+  document.querySelectorAll('.page-content').forEach(el=>el.classList.add('hidden'));
+  document.getElementById('page-'+page).classList.remove('hidden');
+  document.querySelectorAll('.nav-btn').forEach(b=>{
+    b.style.background=''; b.style.color=''; b.classList.remove('font-bold');
+  });
+  const nb = document.getElementById('nav-'+page);
+  if(nb) { nb.style.background='rgba(29,107,61,0.1)'; nb.style.color='#1d6b3d'; nb.classList.add('font-bold'); }
+  if(page==='dashboard') loadDashboard();
+  if(page==='attendance') { state.todayStr=todayKey(); initAttendance(); }
+  if(page==='reports') loadReports();
+  if(page==='settings') renderLateTimeGrid();
+}
+function toggleSidebar() {
+  const s = document.getElementById('sidebar');
+  s.classList.toggle('hidden');
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+async function loadDashboard() {
+  const today = todayKey();
+  const [wStart, wEnd] = weekRange();
+  const [mStart, mEnd] = monthRange();
+  const todaySnap = await db.ref('attendance/'+today).once('value');
+  const todayData = todaySnap.val() || {};
+  let todayCount = 0;
+  const todayList = [];
+  Object.entries(todayData).forEach(([sid, val]) => {
+    if(val && val.count) {
+      todayCount++;
+      const s = STUDENTS.find(x=>x.id===sid);
+      if(s) todayList.push({name:s.name, className:s.className, count:val.count, times:val.times||[]});
+    }
+  });
+  document.getElementById('stat-today').textContent = todayCount;
+  const listEl = document.getElementById('today-late-list');
+  if(todayList.length===0) {
+    listEl.innerHTML='<p class="text-sm text-gray-400 text-center py-8">Belum ada siswa terlambat hari ini</p>';
+  } else {
+    listEl.innerHTML = todayList.sort((a,b)=>b.count-a.count).map((s,i) => {
+      const cc = s.count>=4?'bg-red-100 text-red-700':s.count>=2?'bg-yellow-100 text-yellow-700':'bg-green-100 text-green-700';
+      return '<div class="flex items-center justify-between py-2.5"><div><p class="text-sm font-semibold text-gray-900 dark:text-white">'+escHtml(s.name)+'</p><p class="text-xs text-gray-500">'+escHtml(s.className)+'</p></div><span class="px-2 py-1 rounded-full text-xs font-bold '+cc+'">'+s.count+'x</span></div>';
+    }).join('');
+  }
+  // Week + Month counts
+  let weekCount=0, monthCount=0;
+  const wDates = datesInRange(wStart,wEnd);
+  const mDates = datesInRange(mStart,mEnd);
+  const wSnaps = await Promise.all(wDates.map(d=>db.ref('attendance/'+d).once('value')));
+  wSnaps.forEach(snap=>{const d=snap.val()||{};Object.values(d).forEach(v=>{if(v&&v.count) weekCount+=v.count;});});
+  document.getElementById('stat-week').textContent = weekCount;
+  const mSnaps = await Promise.all(mDates.map(d=>db.ref('attendance/'+d).once('value')));
+  mSnaps.forEach(snap=>{const d=snap.val()||{};Object.values(d).forEach(v=>{if(v&&v.count) monthCount+=v.count;});});
+  document.getElementById('stat-month').textContent = monthCount;
+}
+
+// ============================================================
+// ATTENDANCE
+// ============================================================
+function initAttendance() {
+  document.getElementById('att-date-label').textContent = dateLabel(state.todayStr);
+  renderClassTabs();
+  db.ref('attendance/'+state.todayStr).on('value', snap => {
+    state.todayAttendance = snap.val() || {};
+    renderStudentGrid();
+  });
+}
+function renderClassTabs() {
+  const el = document.getElementById('class-tabs');
+  el.innerHTML = CLASSES.map(c => {
+    const cnt = Object.values(state.todayAttendance).filter(v=>v&&v.classId===c.id&&v.count).length;
+    const active = state.currentClassId===c.id;
+    return '<button onclick="selectClass(\''+c.id+'\')" class="px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all '+(active?'text-white border-transparent':'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 hover:border-green-300')+'" style="'+(active?'background:#1d6b3d':'')+'">'+escHtml(c.name)+(cnt?'<span class="ml-1 px-1.5 py-0.5 rounded-full text-white text-xs" style="background:rgba(255,255,255,0.25)">'+cnt+'</span>':'')+'</button>';
+  }).join('');
+}
+function selectClass(id) {
+  state.currentClassId=id;
+  renderClassTabs();
+  renderStudentGrid();
+}
+function renderStudentGrid() {
+  const search = (document.getElementById('att-search').value||'').toLowerCase();
+  const students = STUDENTS.filter(s => s.classId===state.currentClassId && s.name.toLowerCase().includes(search));
+  const el = document.getElementById('student-grid');
+  el.innerHTML = students.map(s => {
+    const rec = state.todayAttendance[s.id] || {};
+    const cnt = rec.count||0;
+    let bg='', badge='', border='border-gray-200', textColor='text-gray-900 dark:text-white';
+    if(cnt===0) { bg='bg-white dark:bg-gray-800'; }
+    else if(cnt===1) { bg='bg-green-50 dark:bg-green-900/20'; badge='<span class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-green-500 text-white text-xs font-bold flex items-center justify-center">'+cnt+'</span>'; border='border-green-300'; }
+    else if(cnt<=3) { bg='bg-yellow-50 dark:bg-yellow-900/20'; badge='<span class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-yellow-500 text-white text-xs font-bold flex items-center justify-center">'+cnt+'</span>'; border='border-yellow-300'; }
+    else { bg='bg-red-50 dark:bg-red-900/20'; badge='<span class="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-600 text-white text-xs font-bold flex items-center justify-center">'+cnt+'</span>'; border='border-red-400'; textColor='text-red-700 dark:text-red-400'; }
+    return '<div class="student-card relative '+bg+' border-2 '+border+' rounded-xl p-3 text-center select-none" onclick="toggleLate(\''+s.id+'\')">'+badge+'<p class="text-xs font-semibold '+textColor+' leading-tight">'+escHtml(s.name)+'</p></div>';
+  }).join('');
+  renderClassTabs();
+}
+async function toggleLate(sid) {
+  const s = STUDENTS.find(x=>x.id===sid);
+  if(!s) return;
+  const rec = state.todayAttendance[sid] || {};
+  const cnt = rec.count||0;
+  const now = new Date();
+  const timeStr = padZ(now.getHours())+':'+padZ(now.getMinutes());
+  if(cnt===0) {
+    await db.ref('attendance/'+state.todayStr+'/'+sid).set({
+      studentName:s.name, className:s.className, classId:s.classId, count:1, times:[timeStr], markedAt:Date.now()
+    });
+    showToast(s.name+' dicatat terlambat');
+  } else {
+    const times = rec.times||[];
+    times.push(timeStr);
+    await db.ref('attendance/'+state.todayStr+'/'+sid).update({count:cnt+1, times});
+    showToast(s.name+' +1 (total '+(cnt+1)+'x)');
+  }
+}
+
+// ============================================================
+// REPORTS
+// ============================================================
+function onPeriodChange() {
+  const p = document.getElementById('rpt-period').value;
+  const sw = document.getElementById('rpt-custom-start-wrap');
+  const ew = document.getElementById('rpt-custom-end-wrap');
+  if(p==='custom') { sw.classList.remove('hidden'); ew.classList.remove('hidden'); }
+  else { sw.classList.add('hidden'); ew.classList.add('hidden'); }
+}
+async function loadReports() {
+  const period = document.getElementById('rpt-period').value;
+  const classFilter = document.getElementById('rpt-class').value;
+  let start, end;
+  const today = todayKey();
+  if(period==='today') { start=today; end=today; }
+  else if(period==='week') { [start,end]=weekRange(); }
+  else if(period==='month') { [start,end]=monthRange(); }
+  else { start=document.getElementById('rpt-start').value; end=document.getElementById('rpt-end').value; }
+  if(!start||!end) { showToast('Pilih tanggal terlebih dahulu','error'); return; }
+  const dates = datesInRange(start,end);
+  const rows = [];
+  for(const date of dates) {
+    const snap = await db.ref('attendance/'+date).once('value');
+    const data = snap.val()||{};
+    Object.entries(data).forEach(([sid,val]) => {
+      if(val && val.count) {
+        if(classFilter && val.classId!==classFilter) return;
+        rows.push({studentId:sid, studentName:val.studentName||'', className:val.className||'', classId:val.classId||'', date, count:val.count, times:val.times||[]});
+      }
+    });
+  }
+  state.reportRows = rows;
+  renderReportTable(rows);
+}
+function renderReportTable(rows) {
+  const tbody = document.getElementById('rpt-tbody');
+  document.getElementById('rpt-count').textContent = rows.length+' data';
+  if(rows.length===0) { tbody.innerHTML='<tr><td colspan="6" class="text-center py-10 text-gray-400">Tidak ada data</td></tr>'; return; }
+  tbody.innerHTML = rows.map((r,i) => {
+    const cc = r.count>=4?'bg-red-100 text-red-700':r.count>=2?'bg-yellow-100 text-yellow-700':'bg-green-100 text-green-700';
+    return '<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50"><td class="px-4 py-2.5 text-gray-500 text-xs">'+(i+1)+'</td><td class="px-4 py-2.5 font-medium text-gray-900 dark:text-white text-sm">'+escHtml(r.studentName)+'</td><td class="px-4 py-2.5 text-gray-600 dark:text-gray-300 text-sm">'+escHtml(r.className)+'</td><td class="px-4 py-2.5 text-gray-600 dark:text-gray-300 text-xs">'+escHtml(r.date)+'</td><td class="px-4 py-2.5 text-center"><span class="px-2 py-0.5 rounded-full text-xs font-bold '+cc+'">'+r.count+'x</span></td><td class="px-4 py-2.5 text-gray-500 text-xs">'+escHtml((r.times||[]).join(', '))+'</td></tr>';
+  }).join('');
+}
+function exportExcel() {
+  if(!state.reportRows.length) { showToast('Tidak ada data','error'); return; }
+  const data = [['No','Nama Siswa','Kelas','Tanggal','Jumlah','Jam'],...state.reportRows.map((r,i)=>[i+1,r.studentName,r.className,r.date,r.count,(r.times||[]).join(', ')])];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Kesiangan');
+  XLSX.writeFile(wb, 'laporan-kesiangan-smk.xlsx');
+  showToast('Excel berhasil diunduh');
+}
+function exportPdf() {
+  if(!state.reportRows.length) { showToast('Tidak ada data','error'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(14); doc.text('LAPORAN SISWA KESIANGAN', 105, 15, {align:'center'});
+  doc.setFontSize(10); doc.text('SMK DARUL MUTTAQIN CIANJUR', 105, 22, {align:'center'});
+  doc.autoTable({
+    startY:30,
+    head:[['No','Nama Siswa','Kelas','Tanggal','Jml','Jam']],
+    body:state.reportRows.map((r,i)=>[i+1,r.studentName,r.className,r.date,r.count+'x',(r.times||[]).join(', ')]),
+    styles:{fontSize:8},headStyles:{fillColor:[29,107,61]}
+  });
+  doc.save('laporan-kesiangan-smk.pdf');
+  showToast('PDF berhasil diunduh');
+}
+function exportHtml() {
+  if(!state.reportRows.length) { showToast('Tidak ada data','error'); return; }
+  const map = new Map();
+  state.reportRows.forEach(r => {
+    const k = r.studentId||r.studentName+'||'+r.className;
+    if(!map.has(k)) map.set(k,{name:r.studentName,cls:r.className,total:0,dates:[]});
+    const a = map.get(k); a.total+=r.count; a.dates.push(r.date);
+  });
+  const agg = [...map.values()].sort((a,b)=>b.total-a.total);
+  const now = new Date().toLocaleString('id-ID');
+  const rows = agg.map((r,i)=>'<tr><td style="text-align:center">'+(i+1)+'</td><td>'+escHtml(r.name)+'</td><td>'+escHtml(r.cls)+'</td><td style="text-align:center;font-weight:800;color:'+(r.total>=4?'#dc2626':r.total>=2?'#d97706':'#16a34a')+'">'+r.total+'x</td><td style="font-size:11px;color:#555">'+escHtml(r.dates.join(', '))+'</td></tr>').join('');
+  const html='<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>Laporan Kesiangan</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:sans-serif;background:#f0f4f0;padding:20px}.hdr{background:linear-gradient(135deg,#1d6b3d,#c89a2a);color:white;padding:24px 28px;border-radius:14px;margin-bottom:20px;display:flex;align-items:center;gap:16px}.hdr img{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.15);padding:6px;object-fit:contain}.hn{font-size:20px;font-weight:900}.hs{font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-top:3px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}.sc{background:white;border-radius:10px;padding:14px;text-align:center;border:1px solid #e0e0e0}.sn{font-size:26px;font-weight:900;color:#1d6b3d}.sl{font-size:10px;color:#888;text-transform:uppercase}.tcard{background:white;border-radius:10px;overflow:hidden;border:1px solid #e0e0e0}table{width:100%;border-collapse:collapse}th{background:#f0f7f0;padding:9px 12px;text-align:left;font-size:10px;font-weight:700;color:#2d6b3a;text-transform:uppercase;border-bottom:2px solid #d0e8d8}td{padding:8px 12px;font-size:12px;border-bottom:1px solid #f0f0f0}tr:hover{background:#f8fbf8}.footer{text-align:center;font-size:10px;color:#aaa;margin-top:16px;padding-bottom:20px}.print-btn{position:fixed;bottom:16px;right:16px;background:#1d6b3d;color:white;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(29,107,61,.4)}@media print{.print-btn{display:none}}</style></head><body><div class="hdr"><img src="https://grazia-prod.oss-ap-southeast-1.aliyuncs.com/resources/uid_100050100/514a7296-7778-48.png" crossorigin="anonymous"><div><div class="hn">SMK DARUL MUTTAQIN CIANJUR</div><div class="hs">Laporan Siswa Kesiangan</div><div style="font-size:12px;margin-top:8px;opacity:.85">Dicetak: '+escHtml(now)+'</div></div></div><div class="stats"><div class="sc"><div class="sn">'+agg.length+'</div><div class="sl">Siswa</div></div><div class="sc"><div class="sn">'+agg.reduce((s,r)=>s+r.total,0)+'</div><div class="sl">Total Kejadian</div></div><div class="sc"><div class="sn">'+new Set(agg.map(r=>r.cls)).size+'</div><div class="sl">Kelas</div></div></div><div class="tcard"><table><thead><tr><th style="width:40px">No</th><th>Nama Siswa</th><th style="width:110px">Kelas</th><th style="width:60px;text-align:center">Total</th><th>Tanggal</th></tr></thead><tbody>'+rows+'</tbody></table></div><div class="footer">&#169; 2026 SMK DARUL MUTTAQIN CIANJUR</div><button class="print-btn" onclick="window.print()">&#128438; Cetak/PDF</button></body></html>';
+  const blob = new Blob([html],{type:'text/html;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='laporan-kesiangan.html';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('HTML berhasil diunduh');
+}
+
+// ============================================================
+// SETTINGS — LATE TIME
+// ============================================================
+const LATE_TIMES = ['06:00','06:30','07:00','07:15','07:30','07:45','08:00','08:30'];
+function renderLateTimeGrid() {
+  const el = document.getElementById('late-time-grid');
+  if(!el) return;
+  el.innerHTML = LATE_TIMES.map(t => {
+    const active = state.lateTime===t;
+    return '<button onclick="setLateTime(\''+t+'\')" class="py-2.5 rounded-xl text-sm font-bold border-2 transition-all '+(active?'text-white border-transparent':'bg-white dark:bg-gray-700 border-gray-200 text-gray-800 dark:text-white hover:border-green-400')+'" style="'+(active?'background:#1d6b3d;border-color:#1d6b3d':'')+'">'+t+'</button>';
+  }).join('');
+}
+async function setLateTime(t) {
+  await db.ref('settings/lateTime').set(t);
+  state.lateTime=t;
+  document.getElementById('stat-latetime').textContent=t;
+  renderLateTimeGrid();
+  showToast('Waktu keterlambatan diubah ke '+t);
+}
+
+// ============================================================
+// SETTINGS — PASSWORD OTP
+// ============================================================
+function pwStartForm() { document.getElementById('pw-idle').classList.add('hidden'); document.getElementById('pw-form').classList.remove('hidden'); }
+function pwShowForm() { document.getElementById('pw-otp').classList.add('hidden'); document.getElementById('pw-form').classList.remove('hidden'); }
+function pwReset() {
+  ['pw-idle','pw-form','pw-otp','pw-success'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('pw-idle').classList.remove('hidden');
+  document.getElementById('pw-current').value='';
+  document.getElementById('pw-new').value='';
+  document.getElementById('pw-confirm').value='';
+  document.getElementById('pw-otp-input').value='';
+  document.getElementById('pw-form-error').classList.add('hidden');
+  document.getElementById('pw-otp-error').classList.add('hidden');
+  state.pendingNewPass=''; state.pendingOtp='';
+}
+async function pwRequestOtp() {
+  const cur = document.getElementById('pw-current').value;
+  const nw = document.getElementById('pw-new').value;
+  const cf = document.getElementById('pw-confirm').value;
+  const errEl = document.getElementById('pw-form-error');
+  errEl.classList.add('hidden');
+  if(!cur||!nw||!cf) { errEl.textContent='Semua field harus diisi'; errEl.classList.remove('hidden'); return; }
+  if(cur!==state.currentPassword) { errEl.textContent='Password saat ini salah'; errEl.classList.remove('hidden'); return; }
+  if(nw.length<6) { errEl.textContent='Password baru minimal 6 karakter'; errEl.classList.remove('hidden'); return; }
+  if(nw!==cf) { errEl.textContent='Password baru tidak cocok'; errEl.classList.remove('hidden'); return; }
+  const otp = genOtp();
+  const expiresAt = Date.now()+30*60*1000;
+  await db.ref('passwordChangeRequest').set({otp, expiresAt, requestedAt:Date.now()});
+  state.pendingNewPass=nw; state.pendingOtp=otp;
+  const subj = encodeURIComponent('[SMK DARUL MUTTAQIN] Kode OTP Ganti Password');
+  const lines = ['Halo Admin,','','Permintaan ganti password Sistem Kesiangan SMK Darul Muttaqin Cianjur.','','KODE OTP: '+otp,'','Berlaku: 30 menit','Waktu: '+new Date().toLocaleString('id-ID'),'','Berikan kode ini jika Anda menyetujui perubahan password.'].join('\r\n');
+  const body = encodeURIComponent(lines);
+  window.open('mailto:wildanspndi24@gmail.com?subject='+subj+'&body='+body,'_blank');
+  document.getElementById('pw-form').classList.add('hidden');
+  document.getElementById('pw-otp').classList.remove('hidden');
+}
+async function pwVerifyOtp() {
+  const otp = document.getElementById('pw-otp-input').value.trim();
+  const errEl = document.getElementById('pw-otp-error');
+  errEl.classList.add('hidden');
+  if(otp.length!==6) { errEl.textContent='Masukkan kode OTP 6 digit'; errEl.classList.remove('hidden'); return; }
+  const snap = await db.ref('passwordChangeRequest').once('value');
+  if(!snap.exists()) { errEl.textContent='Tidak ada permintaan OTP aktif'; errEl.classList.remove('hidden'); return; }
+  const data = snap.val();
+  if(Date.now()>data.expiresAt) { await db.ref('passwordChangeRequest').remove(); errEl.textContent='OTP kadaluarsa. Kirim ulang.'; errEl.classList.remove('hidden'); return; }
+  if(otp!==data.otp) { errEl.textContent='Kode OTP salah. Periksa email wildanspndi24@gmail.com'; errEl.classList.remove('hidden'); return; }
+  await db.ref('settings/password').set(state.pendingNewPass);
+  await db.ref('passwordChangeRequest').remove();
+  state.currentPassword=state.pendingNewPass;
+  state.pendingNewPass=''; state.pendingOtp='';
+  document.getElementById('pw-otp').classList.add('hidden');
+  document.getElementById('pw-success').classList.remove('hidden');
+  showToast('Password berhasil diubah!');
+}
+
+// ============================================================
+// SETTINGS — RESET
+// ============================================================
+function confirmResetAtt() {
+  document.getElementById('reset-confirm-input').value='';
+  document.getElementById('reset-modal').classList.remove('hidden');
+}
+function closeResetModal() { document.getElementById('reset-modal').classList.add('hidden'); }
+async function doResetAttendance() {
+  const val = document.getElementById('reset-confirm-input').value;
+  if(val!=='RESET') { showToast('Ketik RESET untuk konfirmasi','error'); return; }
+  await db.ref('attendance').remove();
+  closeResetModal();
+  showToast('Data presensi berhasil direset!');
+  state.todayAttendance={};
+  renderStudentGrid();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+if(state.isLoggedIn) {
+  document.getElementById('login-screen').classList.add('hidden');
+  showApp();
+}
+document.getElementById('login-pass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+</script>
+</body>
+</html>
